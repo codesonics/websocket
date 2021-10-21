@@ -20,11 +20,16 @@ public class MessageController {
     private String sendMessage(@PathVariable String user){
         UserMessage message = new UserMessage();
         message.setTargetUserName(user);
-        message.setMessage("하하하하하" + user);
-        //messageTemplate.convertAndSendToUser(message.getTargetUserName(), "/topic/data", new Greeting(HtmlUtils.htmlEscape(message.getMessage())));
-        HelloMessage hmessage = new HelloMessage();
-        hmessage.setName("hihhi");
-        messageTemplate.convertAndSend("/topic/message", hmessage);
+        message.setMessage("푸시메시지 전달" + user);
+        messageTemplate.convertAndSendToUser(message.getTargetUserName(), "/topic/data", new Greeting(HtmlUtils.htmlEscape(message.getMessage())));
+        return "aa";
+    }
+
+    @GetMapping("/notice")
+    private String sendNotice(){
+        HelloMessage message = new HelloMessage();
+        message.setName("전체 노티메시지 전달");
+        messageTemplate.convertAndSend("/topic/message", new Greeting(HtmlUtils.htmlEscape(message.getName())));
         return "aa";
     }
 }
