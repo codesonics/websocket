@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hello WebSocket</title>
+    <script src="/webjars/jquery/jquery.min.js"></script>
+    <script src="/webjars/sockjs-client/sockjs.min.js"></script>
+    <script src="/webjars/stomp-websocket/stomp.min.js"></script>
+</head>
+<meta charset="utf-8">
+<body>
+<script type="text/javascript">
+    var wsUri = "/gs-guide-websocket";
+    var stompClient;
+    var output;
+    var textID
+    function init() {
+        output = document.getElementById("output");
+        textID = document.getElementById("textID");
+    }
+   /* function connect() {
+        var socket = new SockJS(wsUri);
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+            onOpen();
+            console.log('Connected: ' + frame);
+            stompClient.subscribe('/topic/greetings', function (greeting) {
+                onMessage(JSON.parse(greeting.body).content);
+            });
+        });
+    }*/
+    function connect(user) {
+        var socket = new SockJS(wsUri);
+        stompClient = Stomp.over(socket);
+        stompClient.heartbeat.outgoing = 0;
+        stompClient.heartbeat.incoming = 0;
+        stompClient.connect({user}, function (frame) {
+            onOpen();
+            console.log('Connected: ' + frame);
+            stompClient.subscribe('/user/topic/data', function (message) {
+                $('.' + user).text(JSON.parse(message.body).time);
+            })
+
+            // broadcast message
+            stompClient.subscribe('/topic/message', function (message) {
+                console.log(JSON.parse(message.body).message);
+                alert(JSON.parse(message.body).message);
+            });
+
+            // 에러메시지 핸들링
+            stompClient.subscribe('/user/queue/errors', function (message) {
+                console.log(message);
+                alert("[error] receive User : " + user + " " + message);
+            });
+            stompClient.heartbeat.outgoing = 0;
+        });
+    }
+    function disconnect() {
+        if (stompClient !== null) {
+            stompClient.disconnect();
+        }
+        onClose();
+        console.log("Disconnected");
+    }
+
+    function send_message() {
+        var message = textID.value;
+        writeToScreen("Message Sent: " + message);
+        stompClient.send("/app/hello", {}, JSON.stringify({ 'name': message }));
+    }
+    function sendMessageTemplateToUser(user) {
+        stompClient.send("/app/message/sendToUser", {}, JSON.stringify({
+            'message': '여기보세요',
+            'targetUserName': user
+        }));
+    }
+    function onOpen() {
+        writeToScreen("Connected to Endpoint!");
+    }
+
+    function onClose() {
+        writeToScreen("Close from Endpoint!");
+    }
+
+    function onMessage(message) {
+        writeToScreen("Message Received: " + message);
+    }
+
+    function writeToScreen(message) {
+        var pre = document.createElement("p");
+        pre.style.wordWrap = "break-word";
+        pre.innerHTML = message;
+        output.appendChild(pre);
+    }
+
+    window.addEventListener("load", init, false);
+
+</script>
+<h1 style="text-align: center;">Hello World WebSocket Client</h1>
+<br>
+<div style="text-align: center;">
+    <form action="">
+        <input onclick="connect('kim')" value="Connect" type="button">
+        <input onclick="sendMessageTemplateToUser('hong')" value="Send" type="button">
+        <input id="textID" name="message" value="Hello WebSocket!" type="text"><br>
+    </form>
+</div>
+<div id="output"></div>
+</body>
+</html>
